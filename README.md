@@ -9,7 +9,9 @@
 - 16色を超える色対応
 
 ## スクリーンショット
-![SS](pyxelblk.png)
+![SS](pyxelblk.png) 
+![SS](pyxelblk_setting.png) 
+
 
 ## GIFアニメ
 ![GIF](....gif)
