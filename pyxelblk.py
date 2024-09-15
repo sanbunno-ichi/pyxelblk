@@ -11,7 +11,7 @@
 #[TODO]おじゃま敵（＆敵キャラリソース作成必要）
 #[TODO]アイテム類（リソースはある・・・）
 
-#2024.09.16 パドル調整（まだ微妙にあやしいけど・・・
+#2024.09.15 パドル調整（まだ微妙にあやしいけど・・・
 #2024.09.15 ステージ作成
 #2024.09.15 SE組み込み
 #2024.09.15 得点によるエクストラ実装
@@ -2477,7 +2477,7 @@ def game_control():
 
 					if( GWK[_wk + cxpos] < ( SCREEN_WIDTH / 2 ) ):
 						GWK[_wk + cxspd] = GWK[_wk + cxspd] * (-1)
-1
+
 					#パドルの上は１個のみなのでここで抜ける
 					break
 
@@ -2671,7 +2671,7 @@ def draw():
 			_selcol = 1
 		set_font_text( TITLE_SETTING_X, TITLE_SETTING_Y, 'SETTING', 0, _selcol )
 		#version表記
-		set_font_text( 100, 0, 'VER.2024.09.16 ', 0 )
+		set_font_text( 100, 0, 'VER.2024.09.15 ', 0 )
 
 	else:
 		#パドル表示
@@ -2706,7 +2706,7 @@ def draw():
 #===============================================================================
 #pyxel.init(SCREEN_WIDTH, SCREEN_HEIGHT, fps=60)
 #[use Web]ESCキーを無効化
-pyxel.init(256, 256, fps=60, quit_key=pyxel.KEY_NONE, title='pyxelblk')
+pyxel.init(SCREEN_WIDTH, SCREEN_HEIGHT, fps=60, quit_key=pyxel.KEY_NONE, title='pyxelblk')
 
 #リソース読み込み（マルチカラー有り）
 pyxel.load("pyxelblk.pyxres")
