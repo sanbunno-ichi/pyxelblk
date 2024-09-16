@@ -2,36 +2,7 @@
 #ブロック崩し（Breaking blocks）
 #
 #更新履歴
-#
-#[TODO]各ステージごとのハイスコア表記（いる？
-#[TODO]BGM組み込み（いる？
-#[TODO]面エディタ（再生＆保存機能もあったらいいな）
-#[TODO]デモプレイ（あったらいいかも）
-#[TODO]影の表示（フィールド暗くしたから不要かも
-#[TODO]おじゃま敵（＆敵キャラリソース作成必要）
-#[TODO]アイテム類（リソースはある・・・）
-
-#2024.09.15 パドル調整（まだ微妙にあやしいけど・・・
-#2024.09.15 ステージ作成
-#2024.09.15 SE組み込み
-#2024.09.15 得点によるエクストラ実装
-#2024.09.15 壊せないブロックがあった時のステージクリア判定を追加
-#2024.09.15 タイトルにバージョン表記を追加
-#2024.09.15 フィールドをマルチカラーで作成（DEFAULT色の半分）
-#2024.09.14 タイトル等ゲームシステム作成
-#2024.09.14 ステージクリアやミス等の処理
-#2024.09.14 タイトル画面、設定画面作成
-#2024.09.13 320x240ステージ作成（10面分）
-#2024.09.13 noteに記事を書いてモチベーションアップ！・・・するかな？
-#2024.09.13 不具合修正：右端の壁にヒットでなぜか反対側の壁際のブロックが消える
-#2024.09.12 すり抜け対策
-#2024.09,11 こわれないブロック判定
-#2024.09,10 反射による玉の角度＆速度調整
-#2024.09.09 ヒットチェック作成
-#2024.09.09 テキスト表示、スコア、残機表示
-#2024.09.08 入力系組み込み（マウスのみ、パッドじゃ追いつかない
-#2024.09.06 ブロック表示
-#2024.09.05 リソース作成
+#2024.09.17 github更新
 #2024.09.04 作成開始
 
 import pyxel
@@ -48,7 +19,6 @@ UP_OFFSET			=	0x10	#スコア位置＋壁の厚み
 
 BLK_WIDTH			=	0x10	#ブロック横サイズ
 BLK_HEIGHT			=	8		#ブロック縦サイズ
-
 
 PALETTE_SHADOW		=	0x0c	#マルチカラー影色パレット
 
@@ -71,7 +41,7 @@ SETTING_RIGHT_X		=	0x120
 SETTING_XOFS		=	(SETTING_RIGHT_X + 0x10 - SETTING_TITLE_X)
 SETTING_YOFS		=	12
 SETTING_Y			=	0x40
-
+SETTING_ITEM_MAX	=	9
 #-----------------------------------------------------------------
 #[workass]変数
 WORK_TOP			=	0
@@ -92,7 +62,7 @@ ball_degree			=	WORK_TOP+0x09		#玉の基準角度
 ball_color			=	WORK_TOP+0x0a		#0/1/2 : 玉の色：青/赤/緑
 rest_number			=	WORK_TOP+0x0b		#残機数
 score				=	WORK_TOP+0x0c		#スコア（最大６桁）
-#WORK_TOP+0x0d		#（空き）
+demoplay_counter	=	WORK_TOP+0x0d		#デモプレイカウンター
 blockmap_Hmax		=	WORK_TOP+0x0e		#ブロックマップ横最大サイズ
 blockmap_Vmax		=	WORK_TOP+0x0f		#ブロックマップ縦最大サイズ
 
@@ -121,6 +91,8 @@ item_switch			=	WORK_TOP+0x19
 wait_counter		=	WORK_TOP+0x1a
 highscore_0			=	WORK_TOP+0x1b	#stage_type=0のハイスコア
 highscore_1			=	WORK_TOP+0x1c	#stage_type=1のハイスコア
+title_counter		=	WORK_TOP+0x1d
+
 #--------------------------------------------
 PLY_WORK			=	WORK_TOP+0xc0
 cid					=	0x00		#ID番号
@@ -155,7 +127,7 @@ chit2				=	0x0f		#ヒット回数（パドルヒットでクリア）
 
 CWORK_SIZE			=	0x10		#各種キャラクタワークサイズ
 
-BALL_MAX			=	1			#[TODO]3
+BALL_MAX			=	1
 BALL_WORK			=	WORK_TOP+0xd0	#BALL_MAX分
 
 
@@ -188,19 +160,6 @@ BLOCK_WORK_SIZE	=	0x240			#横方向：18、縦方向：20、18*20 = 360 = 0x228
 
 BF_LIVE			=	0x80
 BF_HIT			=	0x40
-
-#--------------------------------------------
-#おじゃま敵
-ENEMY_MAX		=	3
-ENEMY_WORK		=	WORK_TOP+0x340
-#--------------------------------------------
-#アイテムは画面上最大８個まで
-ITEM_MAX		=	8
-ITEM_WORK		=	WORK_TOP+0x380
-#--------------------------------------------
-#アイテムショット弾
-SHOT_MAX		=	16
-SHOT_WORK		=	WORK_TOP+0x400
 
 #-----------------------------------------------------------------
 #キャラクタテーブル
@@ -622,73 +581,6 @@ rblk_tbl = [
 	0x38, 0x3, 0x48, 0x3, 0x58, 0x3, 0x68, 0x3, 0x78, 0x3, 0x88, 0x3, 0x98, 0x3, 0xa8, 0x3, #8
 	0xb8, 0x3, 0xc8, 0x3, 0xd8, 0x3, 0xe8, 0x3, 0xff, 0xff]
 
-#MULTI BLOCKの影
-#	0 1 2 3 4 5 6 7   8 9 a b c d e f
-#0	□■□■□■□■　□■□■□■□□
-#1	■□■□■□■□　■□■□■□■□
-#2	□■□■□■□■　□■□■□■□□
-#3	■□■□■□■□　■□■□■□■□
-#4	□■□■□■□■　□■□■□■□□
-#5	■□■□■□■□　■□■□■□■□
-#6	□■□■□■□■　□■□■□■□□
-#7	■□■□■□■□　■□■□■□■□
-#8	□■□■□■□■　□■□■□■□□
-
-#smblk_tbl = [0 for tbl in range(0x4e)]
-smblk_tbl = [
-	0x10, 0xb, 0x30, 0xb, 0x50, 0xb, 0x70, 0xb, 0x90, 0xb, 0xb0, 0xb, 0xd0, 0xb, 0x01, 0xb, #0
-	0x21, 0xb, 0x41, 0xb, 0x61, 0xb, 0x81, 0xb, 0xa1, 0xb, 0xc1, 0xb, 0xe1, 0xb, 0x12, 0xb, 
-	0x32, 0xb, 0x52, 0xb, 0x72, 0xb, 0x92, 0xb, 0xb2, 0xb, 0xd2, 0xb, 0xf2, 0xb, 0x03, 0xb, #1
-	0x23, 0xb, 0x43, 0xb, 0x63, 0xb, 0x83, 0xb, 0xa3, 0xb, 0xc3, 0xb, 0xe3, 0xb, 0x14, 0xb, 
-	0x34, 0xb, 0x54, 0xb, 0x74, 0xb, 0x94, 0xb, 0xb4, 0xb, 0xd4, 0xb, 0xf4, 0xb, 0x05, 0xb, #2
-	0x25, 0xb, 0x45, 0xb, 0x65, 0xb, 0x85, 0xb, 0xa5, 0xb, 0xc5, 0xb, 0xe5, 0xb, 0x16, 0xb, 
-	0x36, 0xb, 0x56, 0xb, 0x76, 0xb, 0x96, 0xb, 0xb6, 0xb, 0xd6, 0xb, 0xf6, 0xb, 0x07, 0xb, #3
-	0x27, 0xb, 0x47, 0xb, 0x67, 0xb, 0x87, 0xb, 0xa7, 0xb, 0xc7, 0xb, 0xe7, 0xb, 0x18, 0xb, 
-	0x38, 0xb, 0x58, 0xb, 0x78, 0xb, 0x98, 0xb, 0xb8, 0xb, 0xd8, 0xb, 0xff, 0xff]
-
-
-#右端の影
-#	0 1 2 3 4 5 6 7   8 9 a b c d e f
-#0	□■□■□■□■　□□□□□□□□
-#1	■□■□■□■□　□□□□□□□□
-#2	□■□■□■□■　□□□□□□□□
-#3	■□■□■□■□　□□□□□□□□
-#4	□■□■□■□■　□□□□□□□□
-#5	■□■□■□■□　□□□□□□□□
-#6	□■□■□■□■　□□□□□□□□
-#7	■□■□■□■□　□□□□□□□□
-#8	□■□■□■□■　□□□□□□□□
-#srblk_tbl = [0 for tbl in range(0x2a)]
-srblk_tbl = [
-	0x10, 0xb, 0x30, 0xb, 0x50, 0xb, 0x70, 0xb, 0x01, 0xb, 0x21, 0xb, 0x41, 0xb, 0x61, 0xb, #0
-	0x12, 0xb, 0x32, 0xb, 0x52, 0xb, 0x72, 0xb, 0x03, 0xb, 0x23, 0xb, 0x43, 0xb, 0x63, 0xb, 
-	0x14, 0xb, 0x34, 0xb, 0x54, 0xb, 0x74, 0xb, 0x05, 0xb, 0x25, 0xb, 0x45, 0xb, 0x65, 0xb, #1
-	0x16, 0xb, 0x36, 0xb, 0x56, 0xb, 0x76, 0xb, 0x07, 0xb, 0x27, 0xb, 0x47, 0xb, 0x67, 0xb, 
-	0x18, 0xb, 0x38, 0xb, 0x58, 0xb, 0x78, 0xb, 0xff, 0xff]
-
-#右端の影２（ベタ版）
-#	0 1 2 3 4 5 6 7   8 9 a b c d e f
-#0	□■■■■■■■　□□□□□□□□
-#1	■■■■■■■■　□□□□□□□□
-#2	■■■■■■■■　□□□□□□□□
-#3	■■■■■■■■　□□□□□□□□
-#4	■■■■■■■■　□□□□□□□□
-#5	■■■■■■■■　□□□□□□□□
-#6	■■■■■■■■　□□□□□□□□
-#7	■■■■■■■■　□□□□□□□□
-#8	□■■■■■■■　□□□□□□□□
-#srblk2_tbl = [0 for tbl in range(0x4e)]
-srblk2_tbl = [
-	0x10, 0xb, 0x20, 0xb, 0x30, 0xb, 0x40, 0xb, 0x50, 0xb, 0x60, 0xb, 0x70, 0xb, 0x01, 0xb, #0
-	0x11, 0xb, 0x21, 0xb, 0x31, 0xb, 0x41, 0xb, 0x51, 0xb, 0x61, 0xb, 0x71, 0xb, 0x02, 0xb, 
-	0x12, 0xb, 0x22, 0xb, 0x32, 0xb, 0x42, 0xb, 0x52, 0xb, 0x62, 0xb, 0x72, 0xb, 0x03, 0xb, #1
-	0x13, 0xb, 0x23, 0xb, 0x33, 0xb, 0x43, 0xb, 0x53, 0xb, 0x63, 0xb, 0x73, 0xb, 0x04, 0xb, 
-	0x14, 0xb, 0x24, 0xb, 0x34, 0xb, 0x44, 0xb, 0x54, 0xb, 0x64, 0xb, 0x74, 0xb, 0x05, 0xb, #2
-	0x15, 0xb, 0x25, 0xb, 0x35, 0xb, 0x45, 0xb, 0x55, 0xb, 0x65, 0xb, 0x75, 0xb, 0x06, 0xb, 
-	0x16, 0xb, 0x26, 0xb, 0x36, 0xb, 0x46, 0xb, 0x56, 0xb, 0x66, 0xb, 0x76, 0xb, 0x07, 0xb, #3
-	0x17, 0xb, 0x27, 0xb, 0x37, 0xb, 0x47, 0xb, 0x57, 0xb, 0x67, 0xb, 0x77, 0xb, 0x18, 0xb, 
-	0x28, 0xb, 0x38, 0xb, 0x48, 0xb, 0x58, 0xb, 0x68, 0xb, 0x78, 0xb, 0xff, 0xff]
-
 #-----------------------------------------------------------------
 #最初の高さ、ブロックの並び（色番号）320x240(横18縦最大20)、240x240(横13縦最大20)、終端0xff
 
@@ -702,7 +594,6 @@ stageend_tbl = [ 0xff ]
 #0x6:YELLOW	0x7:MIZU	0x8:PURPLE	0x9:ORANGE	0xa PINK	0x0b GRAY
 #-------
 #[0]320x240 Original Stage
-#PYXEL BLOCK
 stage001_tbl = [
 	1,
 	3,3,3,3,6,0,6,8,0,0,0,8,7,7,7,4,0,0,
@@ -724,7 +615,6 @@ stage001_tbl = [
 	5,5,5,5,7,7,7,0,2,2,2,0,0,9,0,10,0,10,
 	0xff]
 
-#SIMPLE
 stage002_tbl = [
 	3,
 	2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
@@ -738,7 +628,6 @@ stage002_tbl = [
 	10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,
 	0xff]
 
-#Mt.Fuji
 stage003_tbl = [
 	5,
 	0,0,0,0,0,0,0,2,2,2,2,0,0,0,0,0,0,0,
@@ -754,7 +643,6 @@ stage003_tbl = [
 	5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,
 	0xff]
 
-#C.H.No.06
 stage004_tbl = [
 	2,
 	0,0,2,2,2,2,2,2,2,2,2,2,2,2,2,2,0,0,
@@ -773,7 +661,6 @@ stage004_tbl = [
 	0,0,2,2,2,2,2,2,2,2,2,2,2,2,2,2,0,0,
 	0xff]
 
-#C.H.No.15
 stage005_tbl = [
 	1,
 	1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
@@ -812,7 +699,6 @@ stage006_tbl = [
 	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 	0xff]
 
-#Lemmings
 stage007_tbl = [
 	2,
 	0,0,4,0,4,0,0,0,4,0,0,0,0,0,0,0,0,0,
@@ -827,12 +713,6 @@ stage007_tbl = [
 	0,2,2,0,0,0,0,0,0,2,2,0,2,0,0,2,2,0,
 	0xff]
 
-#-------
-#0x0:無し	
-#0x1:ROCK	0x2:WHITE	0x3:RED		0x4:GREEN	#0x5:BLUE
-#0x6:YELLOW	0x7:MIZU	0x8:PURPLE	0x9:ORANGE	0xa PINK	0x0b GRAY
-#-------
-#C.H.No.26
 stage008_tbl = [
 	0,
 	0,5,5,5,0,0,0,2,0,0,2,0,0,0,5,5,5,0,
@@ -874,7 +754,6 @@ stage009_tbl = [
 	1,1,1,0,0,0,1,1,1,0,0,0,1,1,1,0,0,0,
 	0xff]
 
-#C.H.No.5kai
 stage010_tbl = [
 	1,
 	0,0,0,0,0,1,3,1,0,0,1,3,1,0,0,0,0,0,
@@ -893,6 +772,7 @@ stage010_tbl = [
 	1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,
 	0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,
 	0xff]
+
 stage011_tbl = [
 	3,
 	1,4,1,5,1,6,1,7,1,8,1,9,1,0,1,0,1,0,
@@ -905,7 +785,7 @@ stage011_tbl = [
 	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 	1,0,1,0,1,0,1,3,1,4,1,5,1,6,1,7,1,8,
 	0xff]
-#C.H.No.27
+
 stage012_tbl = [
 	2,
 	0,1,3,3,3,1,0,0,0,0,0,0,1,3,3,3,1,0,
@@ -921,6 +801,7 @@ stage012_tbl = [
 	0,0,0,0,0,0,1,4,4,6,4,4,1,0,0,0,0,0,
 	0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,
 	0xff]
+
 stage013_tbl = [
 	5,
 	1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -935,7 +816,7 @@ stage013_tbl = [
 	6,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,
 	1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 	0xff]
-#C.H.No.41
+
 stage014_tbl = [
 	0,
 	0,0,0,2,0,0,0,2,0,0,0,2,0,0,0,2,0,0,
@@ -957,7 +838,7 @@ stage014_tbl = [
 	0,0,0,10,0,0,0,10,0,0,0,10,0,0,0,10,0,0,
 	0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,
 	0xff]
-#C.H.No.49
+
 stage015_tbl = [
 	0,
 	1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
@@ -980,6 +861,7 @@ stage015_tbl = [
 	1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,
 	1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,
 	0xff]
+
 stage016_tbl = [
 	1,
 	5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,
@@ -1069,7 +951,6 @@ stage104_tbl = [
 	0,0,0,0,0,0,0,0,2,2,2,0,0,
 	0xff]
 
-#Mt.Fuji
 stage105_tbl = [
 	3,
 	0,0,0,0,0,2,2,2,0,0,0,0,0,
@@ -1099,6 +980,7 @@ stage106_tbl = [
 	1,0,0,0,0,0,0,0,0,0,0,0,1,
 	3,3,3,3,3,3,3,3,3,3,3,3,3,
 	0xff]
+
 stage107_tbl = [
 	4,
 	0,0,0,0,0,0,1,0,0,0,0,0,0,
@@ -1113,6 +995,7 @@ stage107_tbl = [
 	0,0,0,0,6,0,0,0,6,0,0,0,0,
 	0,0,0,0,6,0,1,0,6,0,0,0,0,
 	0xff]
+
 stage108_tbl = [
 	3,
 	0,2,2,2,2,2,2,2,2,2,2,2,0,
@@ -1127,6 +1010,7 @@ stage108_tbl = [
 	0,2,0,0,0,0,0,0,0,0,0,2,0,
 	0,2,2,2,2,2,2,2,2,2,2,2,0,
 	0xff]
+
 stage109_tbl = [
 	3,
 	0,1,5,5,5,1,0,1,5,5,5,1,0,
@@ -1144,6 +1028,7 @@ stage109_tbl = [
 	0,0,0,1,0,4,4,4,0,1,0,0,0,
 	0,0,0,0,1,1,1,1,1,0,0,0,0,
 	0xff]
+
 stage110_tbl = [
 	4,
 	0,0,0,0,0,0,5,0,0,0,0,0,0,
@@ -1182,6 +1067,7 @@ stage111_tbl = [
 	0,0,0,0,0,0,0,0,0,0,0,0,0,
 	0,2,2,2,2,2,2,2,2,2,2,2,2,
 	0xff]
+
 stage112_tbl = [
 	1,
 	0,9,0,8,0,7,0,6,0,5,0,4,0,
@@ -1203,6 +1089,7 @@ stage112_tbl = [
 	0,9,0,8,0,7,0,6,0,5,0,4,0,
 	0,0,3,0,2,0,9,0,8,0,7,0,0,
 	0xff]
+
 stage113_tbl = [
 	2,
 	0,1,0,0,0,0,0,0,0,0,0,1,0,
@@ -1223,6 +1110,7 @@ stage113_tbl = [
 	0,0,0,0,0,1,0,1,0,0,0,0,0,
 	0,0,0,0,0,1,0,1,0,0,0,0,0,
 	0xff]
+
 stage114_tbl = [
 	0,
 	0,0,0,2,0,0,0,2,0,0,0,2,0,
@@ -1242,6 +1130,7 @@ stage114_tbl = [
 	0,9,0,0,0,9,0,0,0,9,0,0,0,
 	0,1,0,0,0,1,0,0,0,1,0,0,0,
 	0xff]
+
 stage115_tbl = [
 	2,
 	1,0,0,0,0,0,0,0,0,0,0,0,1,
@@ -1490,37 +1379,6 @@ def stage_block():
 			_bcnt+=1
 
 #-----------------------------------------------------------------
-#影描画
-#	ブロックDEF or MULTIの影は共通
-#	半透明が無いので微妙な感じ
-#	玉やパドル、敵キャラの影も必要なので一旦表示しない方向で
-#-----------------------------------------------------------------
-def stage_block_shadow():
-	_stg_adr = stage_tbl[ GWK[stage_type] ]
-	_adr = _stg_adr[ GWK[stage_number] ]
-	_cnt = 0
-	_start_height = _adr[_cnt]
-	#stage end code?
-	if( GWK[start_height] == 0xff ):
-		return
-	_cnt+=1
-	
-	for _ycnt in range( GWK[blockmap_Vmax] - _start_height ):
-		for _xcnt in range( GWK[blockmap_Hmax] ):
-			_id = _adr[_cnt]
-			if( _id == 0xff ):
-				return
-			elif( _id == 0 ):
-				pass
-			else:
-				_id = _id + ID_BLK_MULTI - 1		#ブロック
-				_stype = 1
-				if( _xcnt == (GWK[blockmap_Hmax]-1) ):		#右端？
-					_stype = 2
-				cput( ( LEFT_OFFSET + GWK[blockmap_shortofs] ) + ( _xcnt * BLK_WIDTH ), ( _start_height * BLK_HEIGHT ) + ( _ycnt * BLK_HEIGHT ) + UP_OFFSET, _id, _stype )
-			_cnt+=1
-
-#-----------------------------------------------------------------
 #work clear
 #-----------------------------------------------------------------
 def work_clear():
@@ -1552,8 +1410,6 @@ def work_init():
 	GWK[ball_color] = 1					#0/1/2 : 玉の色：青/赤/緑
 
 	GWK[field_switch] = 1				#フィールドスイッチ（ブロック背景有り/無し）
-	GWK[enemy_switch] = 0				#[TODO]おじゃま敵スイッチ
-	GWK[item_switch] = 0				#[TODO]アイテムスイッチ
 
 #-----------------------------------------------------------------
 #パドルにヒットするたび玉の移動スピードを加速させる
@@ -1604,9 +1460,6 @@ def ball_hit_check( _wk ):
 	#玉の中心座標を取得
 	_xp = int(GWK[_wk + cxpos]) + int( ctbl[GWK[_wk + cid]][2] / 2 )
 	_yp = int(GWK[_wk + cypos]) + int( ctbl[GWK[_wk + cid]][3] / 2 )
-
-	#玉の移動方向が下以外はパドルにヒットしない
-	#if( GWK[_wk + cyspd] > 0 ):
 
 	#Y座標がパドルの範囲内
 	#パドルのヒット範囲を取得
@@ -1805,7 +1658,6 @@ def ball_hit_check( _wk ):
 		#右端
 		elif( _b88 <= _xp ):
 			#print("RIGHT-SIDE")
-			#GWK[_wk + cxspd] = GWK[_wk + cspd] * (-1)
 			GWK[_wk + cdeg] = 20
 			GWK[_wk + cxspd] = GWK[_wk + cspd] * pyxel.cos(GWK[_wk + cdeg])
 		
@@ -1860,12 +1712,6 @@ def ball_hit_check( _wk ):
 			GWK[_wk + cypold] = GWK[save_cypold]
 			GWK[_wk + cxspd] = GWK[save_cxspd]
 			GWK[_wk + cyspd] = GWK[save_cyspd]
-
-
-			##どちらも同じはありえないから考えない（ずっとヒット中ならありえるのか・・・
-			#if(( _bx == _bxold )and( _by == _byold )):
-			#	print("[SAME]", _bx, _by )
-			#	show()		#★[DEBUG]止める（こなかった
 			
 			#Yブロックが同じならX反転
 			if( _by == _byold ):
@@ -1875,10 +1721,6 @@ def ball_hit_check( _wk ):
 				GWK[_wk + cyspd] = GWK[_wk + cyspd] * (-1)
 
 			#共に異なる場合（斜め進入の場合）共に反転
-			#if( ( _by != _byold ) and ( _bx != _bxold ) ):
-			#	GWK[_wk + cxspd] = GWK[_wk + cxspd] * (-1)
-			#	GWK[_wk + cyspd] = GWK[_wk + cyspd] * (-1)
-			#↓
 			#当たったブロック周辺のブロックの状況を見て判断
 			if( ( _by != _byold ) and ( _bx != _bxold ) ):
 				#(+,+)の場合
@@ -1986,17 +1828,6 @@ def ball_hit_check( _wk ):
 					GWK[rest_number] += 1
 					pyxel.play(2,27)
 
-
-				#[TODO]アイテム出現
-
-#---debug
-#				#耐久ブロック
-#				print("#### BLOCK HIT!!!")
-#				GWK[BLOCK_WORK + _block_pos] = GWK[BLOCK_WORK + _block_pos] + 0x01
-#				if(( GWK[BLOCK_WORK + _block_pos] & 0x0f ) > 0x0a ):
-#					GWK[BLOCK_WORK + _block_pos] = ( GWK[BLOCK_WORK + _block_pos] & 0xf0 ) + 0x02
-#---debug
-
 	#ステージクリア判定
 	_live_check = 0
 	for _cnt in range( BLOCK_WORK_SIZE ):
@@ -2007,9 +1838,12 @@ def ball_hit_check( _wk ):
 				break
 	#もうブロック無いよ
 	if( _live_check == 0 ):
-		GWK[game_adv] = G_STAGECLEAR
-		GWK[game_subadv] = 0
-		pyxel.play(2,33)
+		if( GWK[game_adv] == G_DEMOPLAY ):
+			title_set()
+		else:
+			GWK[game_adv] = G_STAGECLEAR
+			GWK[game_subadv] = 0
+			pyxel.play(2,33)
 
 #===============================================================================
 #更新
@@ -2028,36 +1862,38 @@ def update():
 			GWK[game_subadv] = 1
 
 		elif( GWK[game_subadv] == 1 ):	#項目選択待ち
-			if( ( pyxel.mouse_y >= TITLE_START_Y ) and ( pyxel.mouse_y < ( TITLE_START_Y + FONT_HEIGHT ) )
-				and ( pyxel.mouse_x >= TITLE_START_X ) and ( pyxel.mouse_x < ( TITLE_START_X + TITLE_START_OFS ) ) ):
-				GWK[title_select] = 0
-
-			if( ( pyxel.mouse_y >= TITLE_SETTING_Y ) and ( pyxel.mouse_y < ( TITLE_SETTING_Y + FONT_HEIGHT ) ) 
-				and ( pyxel.mouse_x >= TITLE_SETTING_X ) and ( pyxel.mouse_x < ( TITLE_SETTING_X + TITLE_SETTING_OFS ) ) ):
-				GWK[title_select] = 1
-
-			if( pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT) ):
-				if( GWK[title_select] == 0 ):
-					#ゲーム開始
-					GWK[game_adv] = G_GAME
-					GWK[game_subadv] = 0
-					pyxel.play(2,32)
-
-
-					if( GWK[debug_stage_number] != 999 ):
-						GWK[stage_number] = GWK[debug_stage_number]
-
-				else:
-					#設定画面へ
-					GWK[game_adv] = G_SETTING
-					GWK[setting_select] = 0
-					pyxel.play(2,32)
-
+			GWK[title_counter] += 1
+			if( GWK[title_counter] > 500 ):
+				#デモプレイ開始
+				GWK[game_adv] = G_DEMOPLAY
 				GWK[game_subadv] = 0
+			else:
+				#開始入力待ち
+				if( ( pyxel.mouse_y >= TITLE_START_Y ) and ( pyxel.mouse_y < ( TITLE_START_Y + FONT_HEIGHT ) )
+					and ( pyxel.mouse_x >= TITLE_START_X ) and ( pyxel.mouse_x < ( TITLE_START_X + TITLE_START_OFS ) ) ):
+					GWK[title_select] = 0
+
+				if( ( pyxel.mouse_y >= TITLE_SETTING_Y ) and ( pyxel.mouse_y < ( TITLE_SETTING_Y + FONT_HEIGHT ) ) 
+					and ( pyxel.mouse_x >= TITLE_SETTING_X ) and ( pyxel.mouse_x < ( TITLE_SETTING_X + TITLE_SETTING_OFS ) ) ):
+					GWK[title_select] = 1
+
+				if( pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT) ):
+					if( GWK[title_select] == 0 ):
+						#ゲーム開始
+						GWK[game_adv] = G_GAME
+						GWK[game_subadv] = 0
+						pyxel.play(2,32)
+
+					else:
+						#設定画面へ
+						GWK[game_adv] = G_SETTING
+						GWK[setting_select] = 0
+						pyxel.play(2,32)
+
+					GWK[game_subadv] = 0
 
 	elif( GWK[game_adv] == G_DEMOPLAY ):
-		#将来的に・・・
-		pass
+		game_control()
 	elif( GWK[game_adv] == G_GAME ):
 		game_control()
 	elif( GWK[game_adv] == G_OVER ):
@@ -2112,6 +1948,7 @@ def title_set():
 	GWK[game_adv] = G_TITLE
 	GWK[game_subadv] = 0
 	GWK[title_select] = 0
+	GWK[title_counter] = 0
 
 #-----------------------------------------------------------------
 #設定更新
@@ -2123,23 +1960,18 @@ def title_set():
 #	[TODO]項目No.5 : ENEMY ON/OFF							enemy_switch
 #	[TODO]項目No.6 : ITEM ON/OFF							item_switch
 #	[DEBUG]項目No.7 : STAGE SELECT							stage_number
-#-----------------------------------------------------------------
-#	font10		0x10 font18					0x10
-#	title		left set                     right
-#	[選択項目]	[←][	項目毎の選択内容	][→]
+#	EXITボタン
 #-----------------------------------------------------------------
 def setting_control():
 	if( GWK[game_subadv] == 0 ):
 		#初期化
 		#マウスカーソル表示
 		pyxel.mouse( visible = True )
-		
-		GWK[debug_stage_number] = 999
 		GWK[game_subadv] = 1
 
 	elif( GWK[game_subadv] == 1 ):
 		#選択
-		for _cnt in range(8):
+		for _cnt in range(SETTING_ITEM_MAX):
 			if( ( pyxel.mouse_y >= ( SETTING_Y + ( SETTING_YOFS * _cnt ) ) ) and ( pyxel.mouse_y < ( SETTING_Y + ( SETTING_YOFS * _cnt ) + FONT_HEIGHT ) )
 				and ( pyxel.mouse_x >= SETTING_TITLE_X ) and ( pyxel.mouse_x < ( SETTING_TITLE_X + SETTING_XOFS ) ) ):
 				GWK[setting_select] = _cnt
@@ -2179,22 +2011,15 @@ def setting_control():
 				elif( _cnt == 4 ):	#項目No.4 : FIELD ON/OFF（ONなら影もON）
 					pyxel.play(3,4)
 					GWK[field_switch] = ( GWK[field_switch] + 1 ) & 1
-#				elif( _cnt == 5 ):	#項目No.5 : ENEMY ON/OFF
-#					pyxel.play(3,4)
-#					GWK[enemy_switch] = ( GWK[enemy_switch] + 1 ) & 1
-#				elif( _cnt == 6 ):	#項目No.6 : ITEM ON/OFF
-#					pyxel.play(3,4)
-#					GWK[item_switch] = ( GWK[item_switch] + 1 ) & 1
-				elif( _cnt == 7 ):	#項目No.7 : STAGE SELECT
-					pyxel.play(3,4)
 
-					#全16面
-					GWK[stage_number] -= 1
-					if( GWK[stage_number] < 0 ):
-						if( GWK[stage_type] == 0 ):
-							GWK[stage_number] = 15
-						elif( GWK[stage_type] == 1 ):
-							GWK[stage_number] = 15
+			elif( ( pyxel.mouse_y >= ( SETTING_Y + ( SETTING_YOFS * _cnt ) ) ) and ( pyxel.mouse_y < ( SETTING_Y + ( SETTING_YOFS * _cnt ) + FONT_HEIGHT ) )
+				and ( pyxel.mouse_x >= SETTING_TITLE_X ) and ( pyxel.mouse_x < ( SETTING_TITLE_X + 0x20 ) ) ):
+
+				if( _cnt == 8 ):	#EXIT
+					pyxel.play(3,4)
+					GWK[game_adv] = G_TITLE
+					GWK[game_subadv] = 0
+					GWK[title_select] = 0
 
 			elif( ( pyxel.mouse_y >= ( SETTING_Y + ( SETTING_YOFS * _cnt ) ) ) and ( pyxel.mouse_y < ( SETTING_Y + ( SETTING_YOFS * _cnt ) + FONT_HEIGHT ) )
 				and ( pyxel.mouse_x >= SETTING_RIGHT_X ) and ( pyxel.mouse_x < ( SETTING_RIGHT_X + 0x10 ) ) ):
@@ -2228,36 +2053,21 @@ def setting_control():
 				elif( _cnt == 4 ):	#項目No.4 : FIELD ON/OFF（ONなら影もON）
 					pyxel.play(3,4)
 					GWK[field_switch] = ( GWK[field_switch] + 1 ) & 1
-#				elif( _cnt == 5 ):	#項目No.5 : ENEMY ON/OFF
-#					pyxel.play(3,4)
-#					GWK[enemy_switch] = ( GWK[enemy_switch] + 1 ) & 1
-#				elif( _cnt == 6 ):	#項目No.6 : ITEM ON/OFF
-#					pyxel.play(3,4)
-#					GWK[item_switch] = ( GWK[item_switch] + 1 ) & 1
-				elif( _cnt == 7 ):	#項目No.7 : STAGE SELECT
+
+			elif( ( pyxel.mouse_y >= ( SETTING_Y + ( SETTING_YOFS * _cnt ) ) ) and ( pyxel.mouse_y < ( SETTING_Y + ( SETTING_YOFS * _cnt ) + FONT_HEIGHT ) )
+				and ( pyxel.mouse_x >= SETTING_TITLE_X ) and ( pyxel.mouse_x < ( SETTING_TITLE_X + 0x20 ) ) ):
+				if( _cnt == 8 ):	#EXIT
 					pyxel.play(3,4)
-					GWK[stage_number] += 1
-
-					#全16面
-					if( ( ( GWK[stage_type] == 0 ) and ( GWK[stage_number] > 15 ) ) or
-						( ( GWK[stage_type] == 1 ) and ( GWK[stage_number] > 15 ) ) ):
-						GWK[stage_number] = 0
-
-		elif( pyxel.btnp(pyxel.MOUSE_BUTTON_RIGHT) ):
-			GWK[game_adv] = G_TITLE
-			GWK[game_subadv] = 0
-			GWK[title_select] = 0
-###---debug
-			GWK[debug_stage_number] = GWK[stage_number]
-###---debug
-			pyxel.play(2,23)
+					GWK[game_adv] = G_TITLE
+					GWK[game_subadv] = 0
+					GWK[title_select] = 0
 
 #-----------------------------------------------------------------
 #設定描画
 #-----------------------------------------------------------------
 def setting_draw():
 	set_font_text( SETTING_TOP_X, SETTING_TOP_Y, 'SETTING', 0, 0 )
-	for _cnt in range(8):
+	for _cnt in range(SETTING_ITEM_MAX):
 		if( GWK[setting_select] == _cnt ):
 			_selcol = 1
 		else:
@@ -2370,68 +2180,8 @@ def setting_draw():
 			else:
 				cput( SETTING_RIGHT_X, SETTING_Y + ( SETTING_YOFS * _cnt ), 0x9e, 0 )
 
-#		#[TODO]項目No.5 : ENEMY ON/OFF
-#		elif( _cnt == 5 ):
-#			set_font_text( SETTING_TITLE_X, SETTING_Y + ( SETTING_YOFS * _cnt ), 'ENEMY SW', 0, _selcol )
-#			#矢印左
-#			if( _selcol == 0 ):
-#				cput( SETTING_LEFT_X, SETTING_Y + ( SETTING_YOFS * _cnt ), 0x9b, 0 )
-#			else:
-#				cput( SETTING_LEFT_X, SETTING_Y + ( SETTING_YOFS * _cnt ), 0x9d, 0 )
-#
-#			if( GWK[enemy_switch] == 0 ):
-#				_str = 'ENEMY OFF'
-#			else:
-#				_str = 'ENEMY ON'
-#			set_font_text( SETTING_ITEM_X, SETTING_Y + ( SETTING_YOFS * _cnt ), _str, 0, _selcol )
-#
-#			#矢印右
-#			if( _selcol == 0 ):
-#				cput( SETTING_RIGHT_X, SETTING_Y + ( SETTING_YOFS * _cnt ), 0x9c, 0 )
-#			else:
-#				cput( SETTING_RIGHT_X, SETTING_Y + ( SETTING_YOFS * _cnt ), 0x9e, 0 )
-#
-#		#[TODO]項目No.6 : ITEM ON/OFF
-#		elif( _cnt == 6 ):
-#			set_font_text( SETTING_TITLE_X, SETTING_Y + ( SETTING_YOFS * _cnt ), 'ITEM SW', 0, _selcol )
-#			#矢印左
-#			if( _selcol == 0 ):
-#				cput( SETTING_LEFT_X, SETTING_Y + ( SETTING_YOFS * _cnt ), 0x9b, 0 )
-#			else:
-#				cput( SETTING_LEFT_X, SETTING_Y + ( SETTING_YOFS * _cnt ), 0x9d, 0 )
-#
-#			if( GWK[item_switch] == 0 ):
-#				_str = 'ITEM OFF'
-#			else:
-#				_str = 'ITEM ON'
-#			set_font_text( SETTING_ITEM_X, SETTING_Y + ( SETTING_YOFS * _cnt ), _str, 0, _selcol )
-#
-#			#矢印右
-#			if( _selcol == 0 ):
-#				cput( SETTING_RIGHT_X, SETTING_Y + ( SETTING_YOFS * _cnt ), 0x9c, 0 )
-#			else:
-#				cput( SETTING_RIGHT_X, SETTING_Y + ( SETTING_YOFS * _cnt ), 0x9e, 0 )
-#
-		#[DEBUG]項目No.7 : STAGE SELECT
-		elif( _cnt == 7 ):
-			set_font_text( SETTING_TITLE_X, SETTING_Y + ( SETTING_YOFS * _cnt ), 'STAGE SELECT', 0, _selcol )
-			#矢印左
-			if( _selcol == 0 ):
-				cput( SETTING_LEFT_X, SETTING_Y + ( SETTING_YOFS * _cnt ), 0x9b, 0 )
-			else:
-				cput( SETTING_LEFT_X, SETTING_Y + ( SETTING_YOFS * _cnt ), 0x9d, 0 )
-
-			set_font_text( SETTING_ITEM_X, SETTING_Y + ( SETTING_YOFS * _cnt ), str(GWK[stage_number]+1), 0, _selcol )
-
-			#矢印右
-			if( _selcol == 0 ):
-				cput( SETTING_RIGHT_X, SETTING_Y + ( SETTING_YOFS * _cnt ), 0x9c, 0 )
-			else:
-				cput( SETTING_RIGHT_X, SETTING_Y + ( SETTING_YOFS * _cnt ), 0x9e, 0 )
-
-
-	set_font_text( 50, 200, 'MOUSE LEFT  CLICK IS CHANGE.', 0, 0 )
-	set_font_text( 50, 212, 'MOUSE RIGHT CLICK IS EXIT.', 0, 0 )
+		elif( _cnt == 8 ):
+			set_font_text( SETTING_TITLE_X, SETTING_Y + ( SETTING_YOFS * _cnt ), 'EXIT', 0, _selcol )
 
 #-----------------------------------------------------------------
 #ゲーム制御
@@ -2444,6 +2194,8 @@ def game_control():
 
 		#マウスカーソル非表示
 		pyxel.mouse( visible = False )
+		
+		GWK[demoplay_counter] = 0
 
 	elif( GWK[game_subadv] == 2 ):
 		#ゲーム再開初期化
@@ -2456,8 +2208,19 @@ def game_control():
 	elif( GWK[game_subadv] == 1 ):
 		#ゲーム中
 
-		#パドル制御（bar_control()）
-		GWK[PLY_WORK + cxpos] = pyxel.mouse_x
+		#パドル制御（paddle_control()）
+		if( GWK[game_adv] != G_DEMOPLAY ):
+			GWK[PLY_WORK + cxpos] = pyxel.mouse_x
+		else:
+			GWK[PLY_WORK + cxpos] = GWK[BALL_WORK + cxpos] - int( ctbl[GWK[PLY_WORK + cid]][2] / 2 )
+
+			GWK[demoplay_counter] += 1
+			#デモプレイ中マウスクリックまたはタイマーでで抜ける
+			if( ( pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT) ) or 
+				( pyxel.btnp(pyxel.MOUSE_BUTTON_RIGHT) ) or 
+				( GWK[demoplay_counter] > 1500 ) ):
+				title_set()
+
 		#枠内に収める
 		if( GWK[PLY_WORK + cxpos] < (LEFT_OFFSET + GWK[blockmap_shortofs]) ):
 			GWK[PLY_WORK + cxpos] = LEFT_OFFSET + GWK[blockmap_shortofs]
@@ -2469,7 +2232,18 @@ def game_control():
 			#パドルの上に玉が存在？（１個しかつかない）
 			if( ( GWK[_wk + ccond] & (F_LIVE+F_ON) ) == (F_LIVE+F_ON) ):
 				#左クリックで離れる
-				if( pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT) ):
+				if( ( GWK[game_adv] == G_GAME ) and ( pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT) ) ):
+					GWK[_wk + ccond] = GWK[_wk + ccond] & ~F_ON;
+					#Y方向移動速度が下向きなら上向きに変更する
+					if( GWK[_wk + cyspd] > 0 ):
+						GWK[_wk + cyspd] = GWK[_wk + cyspd] * (-1)
+
+					if( GWK[_wk + cxpos] < ( SCREEN_WIDTH / 2 ) ):
+						GWK[_wk + cxspd] = GWK[_wk + cxspd] * (-1)
+
+					#パドルの上は１個のみなのでここで抜ける
+					break
+				elif( GWK[game_adv] == G_DEMOPLAY ):
 					GWK[_wk + ccond] = GWK[_wk + ccond] & ~F_ON;
 					#Y方向移動速度が下向きなら上向きに変更する
 					if( GWK[_wk + cyspd] > 0 ):
@@ -2621,7 +2395,6 @@ def draw():
 	#横320
 	if( GWK[stage_type] == 0 ):
 		if( GWK[field_switch] == 1 ):
-			#pyxel.bltm(0, SCORE_HEIGHT, 0, 0+SCREEN_WIDTH * 0, (SCREEN_HEIGHT+0x10) * GWK[bg_type], SCREEN_WIDTH, SCREEN_HEIGHT)
 			pyxel.bltm(0, SCORE_HEIGHT, 0, 0+SCREEN_WIDTH * 1, (SCREEN_HEIGHT+0x10) * GWK[bg_type], SCREEN_WIDTH, SCREEN_HEIGHT)
 
 			for _dy in range(int((SCREEN_HEIGHT - UP_OFFSET)/0x20)):
@@ -2635,7 +2408,6 @@ def draw():
 	#横240
 	else:
 		if( GWK[field_switch] == 1 ):
-			#pyxel.bltm(40, SCORE_HEIGHT, 0, (SCREEN_WIDTH*2)+SCREEN_WIDTH2 * 0, (SCREEN_HEIGHT+0x10) * GWK[bg_type], SCREEN_WIDTH2, SCREEN_HEIGHT)
 			pyxel.bltm(40, SCORE_HEIGHT, 0, (SCREEN_WIDTH*2)+SCREEN_WIDTH2 * 1, (SCREEN_HEIGHT+0x10) * GWK[bg_type], SCREEN_WIDTH2, SCREEN_HEIGHT)
 
 			for _dy in range(int((SCREEN_HEIGHT - UP_OFFSET)/0x20)):
@@ -2654,8 +2426,6 @@ def draw():
 			pyxel.bltm(40, SCORE_HEIGHT, 0, (SCREEN_WIDTH*2)+SCREEN_WIDTH2 * 1, (SCREEN_HEIGHT+0x10) * GWK[bg_type], SCREEN_WIDTH2, SCREEN_HEIGHT)
 
 
-	#[TODO]#ブロックの影の表示
-	#[TODO]stage_block_shadow()
 	#ブロックの表示
 	stage_block()
 
@@ -2671,7 +2441,7 @@ def draw():
 			_selcol = 1
 		set_font_text( TITLE_SETTING_X, TITLE_SETTING_Y, 'SETTING', 0, _selcol )
 		#version表記
-		set_font_text( 100, 0, 'VER.2024.09.15 ', 0 )
+		set_font_text( 100, 0, 'VER.2024.09.17 ', 0 )
 
 	else:
 		#パドル表示
@@ -2704,7 +2474,6 @@ def draw():
 #===============================================================================
 #INIT&RUN
 #===============================================================================
-#pyxel.init(SCREEN_WIDTH, SCREEN_HEIGHT, fps=60)
 #[use Web]ESCキーを無効化
 pyxel.init(SCREEN_WIDTH, SCREEN_HEIGHT, fps=60, quit_key=pyxel.KEY_NONE, title='pyxelblk')
 
