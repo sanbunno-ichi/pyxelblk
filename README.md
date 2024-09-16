@@ -9,7 +9,10 @@
 - 16色を超える色対応
 
 ## スクリーンショット
-![SS](pyxelblk.png) 
+![SS](pyxelblk_m320.png) 
+![SS](pyxelblk_d320.png) 
+![SS](pyxelblk_m240.png) 
+![SS](pyxelblk_d240.png) 
 ![SS](pyxelblk_setting.png) 
 
 
