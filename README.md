@@ -20,5 +20,6 @@
 - [URL](https://sanbunnoichi.web.fc2.com/pyxel/pyxelblk.html)
 
 ## 更新履歴
-2024.09.15 新規追加
+2024.09.17 更新  
+2024.09.15 新規追加  
 
