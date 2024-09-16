@@ -14,8 +14,7 @@
 
 
 ## GIFアニメ
-![GIF](pyxelblk256.gif)  
-![GIF](pyxelblk256_2.gif)
+![GIF](pyxelblk512.gif)
 
 ## 動作確認
 - [URL](https://sanbunnoichi.web.fc2.com/pyxel/pyxelblk.html)
