@@ -4,9 +4,9 @@
 - ゲーム内容はブロック崩し（Breaking blocks）。
 - 画面モードは、320x240と240x240があります。
 - 効果音は、frenchbreadさん作成の「Pyxel RPG SE パック」を使用しています。
-
 - マウス操作のみ（mouse control only）
 - 16色を超える色対応
+- ※Web版の場合、設定で"Field OFF"にすると音割れが発生しません。
 
 ## スクリーンショット
 ![SS](pyxelblk_m320.png) 
