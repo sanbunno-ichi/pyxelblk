@@ -6,7 +6,6 @@
 - 効果音は、frenchbreadさん作成の「Pyxel RPG SE パック」を使用しています。
 - マウス操作のみ（mouse control only）
 - 16色を超える色対応
-- ※Web版の場合、設定で"Field OFF"にすると音割れが発生しません。
 
 ## スクリーンショット
 ![SS](pyxelblk_m320.png) 
@@ -17,12 +16,13 @@
 
 
 ## GIFアニメ
-![GIF](pyxelblk512.gif)
+![GIF](pyxelblk_512.gif)
 
 ## 動作確認
 - [URL](https://sanbunnoichi.web.fc2.com/pyxel/pyxelblk.html)
 
 ## 更新履歴
+2024.09.20 data_ptrによる高速化、Exit機能追加  
 2024.09.17 更新  
 2024.09.15 新規追加  
 
