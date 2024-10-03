@@ -8,20 +8,22 @@
 - 16色を超える色対応
 
 ## スクリーンショット
-![SS](pyxelblk_m320.png) 
-![SS](pyxelblk_d320.png) 
-![SS](pyxelblk_m240.png) 
-![SS](pyxelblk_d240.png) 
-![SS](pyxelblk_setting.png) 
-
+![SS](pyxelblk20.png) 
 
 ## GIFアニメ
-![GIF](pyxelblk_512.gif)
+![GIF](pyxelblk20_Laser.gif)
 
 ## 動作確認
-- [URL](https://sanbunnoichi.web.fc2.com/pyxel/pyxelblk.html)
+- [URL](https://sanbunnoichi.web.fc2.com/pyxel/pyxelblk20.html)
 
 ## 更新履歴
+2024.10.03 version 2.0 Update  
+更新内容：  
+・アイテム追加  
+・CONTINUE追加  
+・三発で壊れるブロック追加  
+・面エディタ追加（作成データはコンソール出力する）  
+・ステージ追加  
 2024.09.20 data_ptrによる高速化、Exit機能追加  
 2024.09.17 更新  
 2024.09.15 新規追加  
