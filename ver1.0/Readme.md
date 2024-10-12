@@ -19,7 +19,7 @@ Breaking blocks Game
 ![GIF](pyxelblk_512.gif)
   
 ## 動作確認
-- [URL](https://sanbunnoichi.web.fc2.com/pyxel/pyxelblk.html)
+- [URL](https://sanbunnoichi1962.web.fc2.com/pyxel/pyxelblk.html)
   
 ## 更新履歴
 2024.09.20 data_ptrによる高速化、Exit機能追加  
