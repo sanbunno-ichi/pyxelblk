@@ -14,7 +14,7 @@
 ![GIF](pyxelblk20_Laser.gif)
 
 ## 動作確認
-- [URL](https://sanbunnoichi.web.fc2.com/pyxel/pyxelblk20.html)
+- [URL](https://sanbunnoichi1962.web.fc2.com/pyxel/pyxelblk20.html)
 
 ## 更新履歴
 2024.10.03 version 2.0 Update  
