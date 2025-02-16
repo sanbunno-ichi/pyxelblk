@@ -7,9 +7,6 @@
 - マウス操作のみ（mouse control only）
 - 16色を超える色対応
 
-## スクリーンショット
-![SS](pyxelblk20.png) 
-
 ## GIFアニメ
 ![GIF](pyxelblk20_Laser.gif)
 
