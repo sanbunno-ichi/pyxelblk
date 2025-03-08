@@ -11,7 +11,7 @@
 ![GIF](pyxelblk20_Laser.gif)
 
 ## Goto Pyxel Contents
-[Pyxel Contents](https://sanbunnoichi1962.web.fc2.com/pyxel_contents.html)
+[Pyxel Contents](https://sanbunno-ichi.github.io/PyxelContents/)
 
 ## 更新履歴
 2024.10.03 version 2.0 Update  
